@@ -1,5 +1,6 @@
 import Container from "@/component/Container";
-import { useAllReports } from "@/firebase/hooks/useReport";
+import { useAuthUser } from "@/firebase/hooks/useAuth";
+import { useUserReports } from "@/firebase/hooks/useReport";
 import { colors } from "@/utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -8,6 +9,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,7 +17,8 @@ import {
 } from "react-native";
 
 const Reports = () => {
-  const { data: reports, isLoading } = useAllReports();
+  const { data: authUser } = useAuthUser();
+  const { data: reports, isLoading } = useUserReports(authUser?.uid);
   const [filter, setFilter] = useState<
     "all" | "pending" | "assigned" | "in-progress" | "resolved"
   >("all");
@@ -113,7 +116,7 @@ const Reports = () => {
         </View>
 
         <Text style={styles.reportDescription} numberOfLines={2}>
-          {item.description}
+          {item.description || 'No description provided'}
         </Text>
 
         <View style={styles.reportFooter}>
@@ -160,7 +163,7 @@ const Reports = () => {
   return (
     <Container>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>All Reports</Text>
+        <Text style={styles.headerTitle}>My Reports</Text>
         <View style={styles.statsRow}>
           <Text style={styles.statsText}>
             {reports?.length || 0} Total Reports
@@ -168,13 +171,18 @@ const Reports = () => {
         </View>
       </View>
 
-      <View style={styles.filtersContainer}>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtersScrollView}
+        contentContainerStyle={styles.filtersContainer}
+      >
         <FilterChip label="All" value="all" />
         <FilterChip label="Pending" value="pending" />
         <FilterChip label="Assigned" value="assigned" />
         <FilterChip label="In Progress" value="in-progress" />
         <FilterChip label="Resolved" value="resolved" />
-      </View>
+      </ScrollView>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -233,12 +241,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
+  filtersScrollView: {
+    maxHeight: 64,
+    backgroundColor: colors.white,
+  },
   filtersContainer: {
-    flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 16,
     gap: 8,
-    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   filterChip: {
     paddingHorizontal: 16,

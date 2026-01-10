@@ -1,29 +1,32 @@
 import Container from '@/component/Container';
 import { useAuthUser, useSignOut } from '@/firebase/hooks/useAuth';
+import { useUserReports } from '@/firebase/hooks/useReport';
 import { useUser } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const Profile = () => {
   const { data: authUser } = useAuthUser();
   const { data: userData, isLoading } = useUser(authUser?.uid);
+  const { data: reports } = useUserReports(authUser?.uid);
   const signOut = useSignOut();
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+
+  const totalReports = reports?.length || 0;
+  const resolvedReports = reports?.filter(r => r.status === 'resolved').length || 0;
+  const pendingReports = reports?.filter(r => r.status === 'pending').length || 0;
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut.mutateAsync();
-          router.replace('/(auth)/(stack)/intro');
-        },
-      },
-    ]);
+    setShowLogoutModal(true);
+  };
+
+  const confirmSignOut = async () => {
+    setShowLogoutModal(false);
+    await signOut.mutateAsync();
+    router.replace('/(auth)/(stack)/intro');
   };
 
   if (isLoading) {
@@ -67,17 +70,17 @@ const Profile = () => {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Ionicons name="document-text" size={24} color={colors.primary} />
-            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statValue}>{totalReports}</Text>
             <Text style={styles.statLabel}>Reports</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="checkmark-done" size={24} color="#10B981" />
-            <Text style={styles.statValue}>8</Text>
+            <Text style={styles.statValue}>{resolvedReports}</Text>
             <Text style={styles.statLabel}>Resolved</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="time" size={24} color="#F59E0B" />
-            <Text style={styles.statValue}>4</Text>
+            <Text style={styles.statValue}>{pendingReports}</Text>
             <Text style={styles.statLabel}>Pending</Text>
           </View>
         </View>
@@ -85,17 +88,17 @@ const Profile = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="person-outline" title="Edit Profile" onPress={() => {}} />
-            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => {}} />
-            <MenuItem icon="location-outline" title="My Locations" onPress={() => {}} />
+            <MenuItem icon="person-outline" title="Edit Profile" onPress={() => router.push('/(user)/edit-profile')} />
+            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => router.push('/(user)/notifications')} />
+            <MenuItem icon="location-outline" title="My Locations" onPress={() => router.push('/(user)/my-locations')} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="help-circle-outline" title="Help & FAQ" onPress={() => {}} />
-            <MenuItem icon="chatbubble-outline" title="Contact Support" onPress={() => {}} />
+            <MenuItem icon="help-circle-outline" title="Help & FAQ" onPress={() => router.push('/(user)/help-faq')} />
+            <MenuItem icon="chatbubble-outline" title="Contact Support" onPress={() => router.push('/(user)/contact-support')} />
           </View>
         </View>
 
@@ -115,6 +118,39 @@ const Profile = () => {
 
         <Text style={styles.version}>Version 1.0.0</Text>
       </ScrollView>
+
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="log-out-outline" size={48} color="#EF4444" />
+            </View>
+            <Text style={styles.modalTitle}>Sign Out</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to sign out? You'll need to log in again to access your account.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalConfirmButton}
+                onPress={confirmSignOut}
+              >
+                <Text style={styles.modalConfirmText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Container>
   );
 };
@@ -275,6 +311,77 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginBottom: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: colors.background || '#F3F4F6',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
   },
 });
 
