@@ -153,10 +153,10 @@ const WorkerHome = () => {
 
         <TouchableOpacity 
           style={styles.mapButton}
-          onPress={() => Alert.alert('Coming Soon', 'Map view will be implemented')}
+          onPress={() => router.push('/(worker)/map-view')}
         >
           <Ionicons name="map" size={24} color={colors.white} />
-          <Text style={styles.mapButtonText}>Show Map</Text>
+          <Text style={styles.mapButtonText}>View Map & Pending Reports</Text>
         </TouchableOpacity>
 
         <View style={styles.tasksSection}>
