@@ -6,7 +6,7 @@ import { useCreateUser } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -42,45 +42,57 @@ const Signup = () => {
 
   return (
     <Container>
-      <View style={styles.root}>
-        <Image source={require('../../../assets/images/icon.png')} style={styles.logo} />
-        <Text style={styles.title}>Create Account</Text>
-        <AppTextInput
-          placeholder='Name'
-          autoCapitalize='words'
-          value={name}
-          onChangeText={setName}
-        />
-        <AppTextInput
-          placeholder='Email'
-          keyboardType='email-address'
-          autoCapitalize='none'
-          value={email}
-          onChangeText={setEmail}
-        />
-        <AppTextInput
-          placeholder='Password'
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <AppTextInput
-          placeholder='Confirm Password'
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
-        <AppButton 
-          title='Sign Up' 
-          style={{ marginTop: 20 }} 
-          onPress={handleSignUp}
-          disabled={signUp.isPending || createUser.isPending}
-        />
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Already have an account?</Text>
-          <Text style={styles.loginLink} onPress={() => router.push('/(auth)/(stack)/login')}>Login</Text>
-        </View>
-      </View>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps='handled'
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.root}>
+            <Image source={require('../../../assets/images/icon.png')} style={styles.logo} />
+            <Text style={styles.title}>Create Account</Text>
+            <AppTextInput
+              placeholder='Name'
+              autoCapitalize='words'
+              value={name}
+              onChangeText={setName}
+            />
+            <AppTextInput
+              placeholder='Email'
+              keyboardType='email-address'
+              autoCapitalize='none'
+              value={email}
+              onChangeText={setEmail}
+            />
+            <AppTextInput
+              placeholder='Password'
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <AppTextInput
+              placeholder='Confirm Password'
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <AppButton 
+              title='Sign Up' 
+              style={{ marginTop: 20 }} 
+              onPress={handleSignUp}
+              disabled={signUp.isPending || createUser.isPending}
+            />
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account?</Text>
+              <Text style={styles.loginLink} onPress={() => router.push('/(auth)/(stack)/login')}>Login</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Container>
   );
 };
