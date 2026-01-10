@@ -1,50 +1,63 @@
-# Welcome to your Expo app 👋
+# 🧼 Swachhsathi – Smart Garbage Reporting App  
+A modern civic-tech mobile application that empowers citizens to report garbage issues in their city.  
+Municipal admins and workers can track, assign, and resolve reports in real-time.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Built using **React Native (Expo)** with **Firebase**, **MobX** for global state management, and **TanStack React Query** for caching, offline support, and background sync.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Features
 
-   ```bash
-   npm install
-   ```
+### 🧑‍🤝‍🧑 User App
+- Upload garbage photos  
+- Auto-detected GPS location  
+- Submit reports to municipality  
+- Track report status (timeline view)  
+- Get notifications when report is assigned or completed  
+- View nearby reports and hotspots  
+- Multi-language support (optional)
 
-2. Start the app
+### 🛠 Worker App
+- Receive assigned tasks  
+- View report details with location  
+- Update progress  
+- Upload after-clean photos  
+- Mark tasks as completed
 
-   ```bash
-   npx expo start
-   ```
+### 🏛 Admin App (Mobile)
+- View all complaints  
+- Filter by: Pending / Assigned / Completed / Urgent  
+- Assign reports to available workers  
+- Monitor worker performance  
+- Analytics: category, zones, hotspots, daily trends  
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🧱 Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### **Frontend**
+- **React Native (Expo)**
+- **MobX** → global, observable app state
+- **React Query (TanStack Query)** → remote data caching + background sync
+- **Expo Router** or React Navigation
+- **TypeScript** (recommended)
 
-## Get a fresh project
+### **Backend**
+- **Firebase Authentication** (Phone auth)
+- **Firestore Database**
+- **Storage** (Before/after images)
+- **Cloud Functions** (Analytics, notifications)
+- **FCM** push notifications
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
-```
+## 📦 React Query Usage  
+React Query is used for:
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- Caching all Firestore reads  
+- Auto-refetching fresh data in background  
+- Offline support  
+- Pagination for reports list  
+- Avoiding duplicate fetch operations  
+- Real-time UI updates  
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
