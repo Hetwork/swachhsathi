@@ -7,7 +7,7 @@ import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const AddWorker = () => {
   const [name, setName] = useState('');
@@ -70,7 +70,15 @@ const AddWorker = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView 
+          style={styles.container} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
             <Ionicons name="person-add" size={48} color={colors.primary} />
@@ -139,6 +147,7 @@ const AddWorker = () => {
           />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </Container>
   );
 };

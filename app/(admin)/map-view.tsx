@@ -4,13 +4,21 @@ import { useAllReports } from '@/firebase/hooks/useReport';
 import { useWorkers } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const MapViewScreen = () => {
+  const params = useLocalSearchParams();
   const { data: reports, isLoading: reportsLoading } = useAllReports();
   const { data: workers, isLoading: workersLoading } = useWorkers();
+  
+  const focusedLocation = params.lat && params.lon ? {
+    latitude: parseFloat(params.lat as string),
+    longitude: parseFloat(params.lon as string),
+  } : undefined;
+  
+  const highlightedReportId = params.reportId as string | undefined;
 
   const handleReportPress = (reportId: string) => {
     router.push(`/(admin)/report-details?id=${reportId}`);
@@ -64,6 +72,8 @@ const MapViewScreen = () => {
         workers={workers || []}
         onReportPress={handleReportPress}
         onWorkerPress={handleWorkerPress}
+        focusedLocation={focusedLocation}
+        highlightedReportId={highlightedReportId}
       />
     </Container>
   );

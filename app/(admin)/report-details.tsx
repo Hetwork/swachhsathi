@@ -176,7 +176,10 @@ const AdminReportDetails = () => {
             )}
           </View>
 
-          <TouchableOpacity style={styles.mapButton} onPress={() => Alert.alert('Coming Soon', 'Map view will be implemented')}>
+          <TouchableOpacity 
+            style={styles.mapButton} 
+            onPress={() => router.push(`/(admin)/map-view?lat=${report.location?.latitude}&lon=${report.location?.longitude}&reportId=${report.id}`)}
+          >
             <Ionicons name="map" size={20} color={colors.white} />
             <Text style={styles.mapButtonText}>View on Map</Text>
           </TouchableOpacity>

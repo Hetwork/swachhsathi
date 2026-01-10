@@ -4,7 +4,7 @@ import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const AdminReports = () => {
   const { data: reports, isLoading } = useAllReports();
@@ -118,29 +118,34 @@ const AdminReports = () => {
           >
             <Ionicons name="map" size={20} color={colors.white} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.searchButton}>
-            <Ionicons name="search" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.filtersSection}>
         <Text style={styles.filterLabel}>Status</Text>
-        <View style={styles.filtersContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScrollView}
+        >
           <FilterChip label="All" value="all" active={filter === 'all'} onPress={() => setFilter('all')} />
           <FilterChip label="Pending" value="pending" active={filter === 'pending'} onPress={() => setFilter('pending')} />
           <FilterChip label="Assigned" value="assigned" active={filter === 'assigned'} onPress={() => setFilter('assigned')} />
           <FilterChip label="In Progress" value="in-progress" active={filter === 'in-progress'} onPress={() => setFilter('in-progress')} />
           <FilterChip label="Resolved" value="resolved" active={filter === 'resolved'} onPress={() => setFilter('resolved')} />
-        </View>
+        </ScrollView>
 
-        <Text style={styles.filterLabel}>Severity</Text>
-        <View style={styles.filtersContainer}>
+        <Text style={[styles.filterLabel, { marginTop: 16 }]}>Severity</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScrollView}
+        >
           <FilterChip label="All" value="all" active={severityFilter === 'all'} onPress={() => setSeverityFilter('all')} />
           <FilterChip label="High" value="High" active={severityFilter === 'High'} onPress={() => setSeverityFilter('High')} />
           <FilterChip label="Medium" value="Medium" active={severityFilter === 'Medium'} onPress={() => setSeverityFilter('Medium')} />
           <FilterChip label="Low" value="Low" active={severityFilter === 'Low'} onPress={() => setSeverityFilter('Low')} />
-        </View>
+        </ScrollView>
       </View>
 
       {isLoading ? (
@@ -208,13 +213,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     paddingHorizontal: 20,
     paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   filterLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: colors.textPrimary,
     marginTop: 12,
     marginBottom: 8,
+  },
+  filterScrollView: {
+    flexGrow: 0,
   },
   filtersContainer: {
     flexDirection: 'row',
@@ -222,12 +232,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
+    marginRight: 8,
   },
   filterChipActive: {
     backgroundColor: colors.primary,
