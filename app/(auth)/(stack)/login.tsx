@@ -6,7 +6,7 @@ import UserService from '@/firebase/services/UserService';
 import { colors } from '@/utils/colors';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -37,33 +37,45 @@ function Login() {
 
   return (
     <Container>
-      <View style={styles.root}>
-        <Image source={require('../../../assets/images/icon.png')} style={styles.logo} />
-        <Text style={styles.title}>SwachhSathi Login</Text>
-        <AppTextInput
-          placeholder='Email'
-          keyboardType='email-address'
-          autoCapitalize='none'
-          value={email}
-          onChangeText={setEmail}
-        />
-        <AppTextInput
-          placeholder='Password'
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <AppButton 
-          title={signIn.isPending ? 'Logging in...' : 'Login'} 
-          style={{ marginTop: 20 }} 
-          onPress={handleLogin}
-          disabled={signIn.isPending}
-        />
-        <View style={styles.signupContainer}>
-          <Text style={styles.signupText}>Don't have an account?</Text>
-            <Text style={styles.signupLink} onPress={() => router.push('/(auth)/(stack)/signup')}>Sign Up</Text>
-        </View>
-      </View>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps='handled'
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.root}>
+            <Image source={require('../../../assets/images/icon.png')} style={styles.logo} />
+            <Text style={styles.title}>SwachhSathi Login</Text>
+            <AppTextInput
+              placeholder='Email'
+              keyboardType='email-address'
+              autoCapitalize='none'
+              value={email}
+              onChangeText={setEmail}
+            />
+            <AppTextInput
+              placeholder='Password'
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <AppButton 
+              title={signIn.isPending ? 'Logging in...' : 'Login'} 
+              style={{ marginTop: 20 }} 
+              onPress={handleLogin}
+              disabled={signIn.isPending}
+            />
+            <View style={styles.signupContainer}>
+              <Text style={styles.signupText}>Don't have an account?</Text>
+              <Text style={styles.signupLink} onPress={() => router.push('/(auth)/(stack)/signup')}>Sign Up</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Container>
   )
 }
