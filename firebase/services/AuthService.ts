@@ -1,37 +1,44 @@
+import { getApp } from '@react-native-firebase/app';
+import {
+  FirebaseAuthTypes,
+  createUserWithEmailAndPassword,
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+} from '@react-native-firebase/auth';
+
 class AuthService {
   // Sign up with email and password
   async signUp(email: string, password: string) {
-    const { getAuth, createUserWithEmailAndPassword } = await import('@react-native-firebase/auth');
-    const auth = getAuth();
-    return createUserWithEmailAndPassword(auth, email, password);
+    const authInstance = getAuth(getApp());
+    return createUserWithEmailAndPassword(authInstance, email, password);
   }
 
   // Sign in with email and password
   async signIn(email: string, password: string) {
-    const { getAuth, signInWithEmailAndPassword } = await import('@react-native-firebase/auth');
-    const auth = getAuth();
-    return signInWithEmailAndPassword(auth, email, password);
+    const authInstance = getAuth(getApp());
+    return signInWithEmailAndPassword(authInstance, email, password);
   }
 
   // Sign out
   async signOut() {
-    const { getAuth, signOut } = await import('@react-native-firebase/auth');
-    const auth = getAuth();
-    return signOut(auth);
+    const authInstance = getAuth(getApp());
+    return signOut(authInstance);
   }
 
   // Auth state listener
-  onAuthStateChanged(callback: (user: any) => void) {
-    const { getAuth, onAuthStateChanged } = require('@react-native-firebase/auth');
-    const auth = getAuth();
-    return onAuthStateChanged(auth, callback);
+  onAuthStateChanged(
+    callback: (user: FirebaseAuthTypes.User | null) => void
+  ) {
+    const authInstance = getAuth(getApp());
+    return onAuthStateChanged(authInstance, callback);
   }
 
   // Get current user
   getCurrentUser() {
-    const { getAuth } = require('@react-native-firebase/auth');
-    const auth = getAuth();
-    return auth.currentUser;
+    const authInstance = getAuth(getApp());
+    return authInstance.currentUser;
   }
 }
 
