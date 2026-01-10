@@ -2,7 +2,9 @@ import Container from '@/component/Container';
 import LocationMap from '@/component/LocationMap';
 import { useAuthUser } from '@/firebase/hooks/useAuth';
 import { useAllReports, useUpdateReportStatus } from '@/firebase/hooks/useReport';
+import { useUser } from '@/firebase/hooks/useUser';
 import AIService from '@/firebase/services/AIService';
+import ReportService from '@/firebase/services/ReportService';
 import StorageService from '@/firebase/services/StorageService';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +17,7 @@ const TaskDetails = () => {
   const params = useLocalSearchParams();
   const { data: reports, isLoading } = useAllReports();
   const { data: authUser } = useAuthUser();
+  const { data: userData } = useUser(authUser?.uid);
   const updateStatus = useUpdateReportStatus();
   const [afterImage, setAfterImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -48,12 +51,24 @@ const TaskDetails = () => {
 
   const handleStatusUpdate = async (newStatus: string) => {
     try {
+      // Update status using the hook (for UI reactivity)
       await updateStatus.mutateAsync({
         reportId: task.id!,
         status: newStatus as any,
       });
+
+      // Create status history entry in subcollection
+      await ReportService.createStatusHistory(
+        task.id!,
+        newStatus as any,
+        authUser?.uid || '',
+        userData?.name || 'Worker',
+        `Status changed to ${newStatus}`
+      );
+
       Alert.alert('Success', 'Task status updated');
     } catch (error) {
+      console.error('Status update error:', error);
       Alert.alert('Error', 'Failed to update status');
     }
   };
@@ -94,6 +109,10 @@ const TaskDetails = () => {
       // Upload after image
       const afterImageUrl = await StorageService.uploadReportImage(afterImage, authUser!.uid);
       console.log('After image uploaded:', afterImageUrl);
+
+      // Save after image URL to report document
+      await ReportService.updateAfterImage(task.id!, afterImageUrl);
+      console.log('After image URL saved to report');
       
       setUploading(false);
       setAnalyzing(true);
@@ -109,10 +128,20 @@ const TaskDetails = () => {
       setAnalyzing(false);
 
       if (comparisonResult.isClean) {
+        // Update status using the hook
         await updateStatus.mutateAsync({
           reportId: task.id!,
           status: 'resolved',
         });
+
+        // Create status history entry
+        await ReportService.createStatusHistory(
+          task.id!,
+          'resolved',
+          authUser?.uid || '',
+          userData?.name || 'Worker',
+          `Task completed with ${comparisonResult.cleanlinessScore}% cleanliness score`
+        );
         
         Alert.alert(
           'Task Completed! 🎉',
