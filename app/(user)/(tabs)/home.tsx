@@ -1,7 +1,7 @@
 import Container from '@/component/Container';
 import { useAuthUser } from '@/firebase/hooks/useAuth';
-import { useUser } from '@/firebase/hooks/useUser';
 import { useUserReports } from '@/firebase/hooks/useReport';
+import { useUser } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -76,41 +76,56 @@ const Home = () => {
     <Container>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Hello,</Text>
-            <Text style={styles.userName}>{userData?.name || 'User'} 👋</Text>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
+          <Text style={styles.headerText}>Hello, {userData?.name || 'User'}</Text>
+          <TouchableOpacity style={styles.notificationButton} onPress={() => router.push('/(user)/notifications')}>
             <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.heroCard}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800' }}
-            style={styles.heroImage}
-            resizeMode="cover"
-          />
-          <View style={styles.heroOverlay}>
-            <Text style={styles.heroTitle}>Keep Your City Clean</Text>
-            <Text style={styles.heroSubtitle}>Report garbage issues in your area</Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Tools</Text>
+            <TouchableOpacity onPress={() => router.push('/(user)/tools')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.toolsContainer}>
+            <TouchableOpacity style={styles.toolCard}>
+              <View style={[styles.toolIconContainer, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="scan" size={32} color="#0284C7" />
+              </View>
+              <Text style={styles.toolTitle}>Waste Scanner</Text>
+              <Text style={styles.toolSubtitle}>Identify waste type</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.toolCard}>
+              <View style={[styles.toolIconContainer, { backgroundColor: '#DCFCE7' }]}>
+                <Ionicons name="leaf" size={32} color="#16A34A" />
+              </View>
+              <Text style={styles.toolTitle}>Recycling Info</Text>
+              <Text style={styles.toolSubtitle}>Learn to recycle</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.actionsContainer}>
-          <ActionButton
-            icon="add-circle"
-            title="New Report"
-            color={colors.primary}
-            onPress={() => router.push('/(user)/new-report')}
-          />
-          <ActionButton
-            icon="document-text"
-            title="My Reports"
-            color="#8B5CF6"
-            onPress={() => {}}
-          />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Reports</Text>
+          <View style={styles.actionsContainer}>
+            <ActionButton
+              icon="add-circle"
+              title="New Report"
+              color={colors.primary}
+              onPress={() => router.push('/(user)/new-report')}
+            />
+            <ActionButton
+              icon="document-text"
+              title="My Reports"
+              color="#8B5CF6"
+              onPress={() => router.push('/(user)/(tabs)/reports')}
+            />
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -127,7 +142,7 @@ const Home = () => {
               <Text style={styles.loadingText}>Loading reports...</Text>
             </View>
           ) : reports && reports.length > 0 ? (
-            reports.slice(0, 3).map((report) => (
+            reports.slice(0, 5).map((report) => (
               <ReportCard key={report.id} report={report} />
             ))
           ) : (
@@ -156,15 +171,10 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
-  greeting: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  userName: {
-    fontSize: 24,
+  headerText: {
+    fontSize: 22,
     fontWeight: '700',
     color: colors.textPrimary,
-    marginTop: 2,
   },
   notificationButton: {
     position: 'relative',
@@ -178,66 +188,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#EF4444',
-  },
-  heroCard: {
-    marginHorizontal: 20,
-    marginVertical: 16,
-    borderRadius: 20,
-    overflow: 'hidden',
-    height: 180,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.white,
-    marginBottom: 4,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: colors.white,
-    opacity: 0.9,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 24,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  actionButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.white,
   },
   section: {
     paddingHorizontal: 20,
@@ -258,6 +208,66 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.primary,
+  },
+  toolsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  toolCard: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  toolIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  toolTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  toolSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
   },
   reportCard: {
     flexDirection: 'row',

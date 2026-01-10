@@ -6,13 +6,18 @@ import { StyleSheet, TextInput, TextInputProps, TouchableOpacity, View } from 'r
 const AppTextInput: React.FC<TextInputProps> = (props) => {
   const [show, setShow] = useState(false);
   const isPassword = props.secureTextEntry;
-  const { secureTextEntry, ...restProps } = props;
+  const { secureTextEntry, style, editable = true, ...restProps } = props;
   
   return (
     <View style={styles.inputWrapper}>
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          style,
+          editable === false && styles.disabledInput,
+        ]}
         placeholderTextColor={colors.textSecondary}
+        editable={editable}
         {...restProps}
         secureTextEntry={isPassword && !show}
       />
@@ -53,6 +58,13 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  disabledInput: {
+    backgroundColor: '#F9FAFB',
+    color: '#6B7280',
+    borderColor: '#D1D5DB',
+    borderWidth: 1,
+    opacity: 1,
   },
 });
 
