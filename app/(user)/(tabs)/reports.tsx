@@ -66,6 +66,7 @@ const Reports = () => {
             styles.filterChipText,
             filter === value && styles.filterChipTextActive,
           ]}
+          numberOfLines={1}
         >
           {label}
         </Text>
@@ -92,7 +93,7 @@ const Reports = () => {
             </View>
           )}
           <View style={styles.reportHeaderInfo}>
-            <Text style={styles.reportCategory}>{item.category}</Text>
+            <Text style={styles.reportCategory}>{item.category || 'General Report'}</Text>
             <View style={styles.userRow}>
               <Ionicons
                 name="person-outline"
@@ -108,10 +109,10 @@ const Reports = () => {
                 color={colors.textSecondary}
               />
               <Text style={styles.reportLocation} numberOfLines={1}>
-                {item.location.address}
+                {item.location?.address || 'Unknown location'}
               </Text>
             </View>
-            <Text style={styles.reportTime}>{getTimeAgo(item.createdAt)}</Text>
+            <Text style={styles.reportTime}>{getTimeAgo(item.updatedAt || item.createdAt)}</Text>
           </View>
         </View>
 
@@ -128,9 +129,9 @@ const Reports = () => {
               size={14}
               color={statusColors.text}
             />
-            <Text style={[styles.statusText, { color: statusColors.text }]}>
+            <Text style={[styles.statusText, { color: statusColors.text }]} numberOfLines={1}>
               {item.status.charAt(0).toUpperCase() +
-                item.status.slice(1).replace("-", " ")}
+                item.status.slice(1).replace(/-/g, " ")}
             </Text>
           </View>
           {item.severity && (
@@ -184,36 +185,38 @@ const Reports = () => {
         <FilterChip label="Resolved" value="resolved" />
       </ScrollView>
 
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading reports...</Text>
-        </View>
-      ) : filteredReports.length > 0 ? (
-        <FlatList
-          data={filteredReports}
-          renderItem={({ item }) => <ReportItem item={item} />}
-          keyExtractor={(item) => item.id!}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons
-            name="document-text-outline"
-            size={64}
-            color={colors.textSecondary}
+      <View style={styles.contentContainer}>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading reports...</Text>
+          </View>
+        ) : filteredReports.length > 0 ? (
+          <FlatList
+            data={filteredReports}
+            renderItem={({ item }) => <ReportItem item={item} />}
+            keyExtractor={(item) => item.id!}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
           />
-          <Text style={styles.emptyText}>
-            {filter === "all" ? "No reports yet" : `No ${filter} reports`}
-          </Text>
-          <Text style={styles.emptySubtext}>
-            {filter === "all"
-              ? "Create your first report to get started"
-              : "Try selecting a different filter"}
-          </Text>
-        </View>
-      )}
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="document-text-outline"
+              size={64}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.emptyText}>
+              {filter === "all" ? "No reports yet" : `No ${filter} reports`}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {filter === "all"
+                ? "Create your first report to get started"
+                : "Try selecting a different filter"}
+            </Text>
+          </View>
+        )}
+      </View>
     </Container>
   );
 };
@@ -241,14 +244,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
+  contentContainer: {
+    flex: 1,
+  },
   filtersScrollView: {
-    maxHeight: 64,
+    flexGrow: 0,
+    flexShrink: 0,
     backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   filtersContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    gap: 8,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -259,6 +267,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
+    marginRight: 8,
   },
   filterChipActive: {
     backgroundColor: colors.primary,
@@ -268,6 +277,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: colors.textSecondary,
+    textAlign: "center",
   },
   filterChipTextActive: {
     color: colors.white,
@@ -356,6 +366,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     gap: 4,
+    flexShrink: 1,
   },
   statusText: {
     fontSize: 12,

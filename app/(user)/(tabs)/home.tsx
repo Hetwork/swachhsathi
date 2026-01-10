@@ -54,10 +54,10 @@ const Home = () => {
           </View>
         )}
         <View style={styles.reportInfo}>
-          <Text style={styles.reportTitle} numberOfLines={1}>{report.category}</Text>
+          <Text style={styles.reportTitle} numberOfLines={1}>{report.category || 'General Report'}</Text>
           <View style={styles.reportMeta}>
             <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-            <Text style={styles.reportLocation} numberOfLines={1}>{report.location.address}</Text>
+            <Text style={styles.reportLocation} numberOfLines={1}>{report.location?.address || 'Unknown location'}</Text>
           </View>
           <View style={styles.reportFooter}>
             <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
@@ -65,7 +65,7 @@ const Home = () => {
                 {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
               </Text>
             </View>
-            <Text style={styles.reportTime}>{getTimeAgo(report.createdAt)}</Text>
+            <Text style={styles.reportTime}>{getTimeAgo(report.updatedAt || report.createdAt)}</Text>
           </View>
         </View>
       </TouchableOpacity>
