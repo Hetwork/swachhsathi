@@ -1,21 +1,28 @@
 import { colors } from '@/utils/colors';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
 
 const AppTextInput: React.FC<TextInputProps> = (props) => {
   const [show, setShow] = useState(false);
   const isPassword = props.secureTextEntry;
+  const { secureTextEntry, ...restProps } = props;
+  
   return (
     <View style={styles.inputWrapper}>
       <TextInput
         style={styles.input}
         placeholderTextColor={colors.textSecondary}
+        {...restProps}
         secureTextEntry={isPassword && !show}
-        {...props}
       />
       {isPassword && (
         <TouchableOpacity style={styles.eyeIcon} onPress={() => setShow(s => !s)}>
-          <Text style={{fontSize:18, color:colors.textSecondary}}>{show ? '\u{1F441}' : '\u{1F576}'}</Text>
+          <Ionicons 
+            name={show ? 'eye-outline' : 'eye-off-outline'} 
+            size={22} 
+            color={colors.textSecondary} 
+          />
         </TouchableOpacity>
       )}
     </View>
