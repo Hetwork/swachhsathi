@@ -105,9 +105,9 @@ const Profile = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="document-text-outline" title="Terms & Conditions" onPress={() => {}} />
-            <MenuItem icon="shield-checkmark-outline" title="Privacy Policy" onPress={() => {}} />
-            <MenuItem icon="information-circle-outline" title="About Us" onPress={() => {}} />
+            <MenuItem icon="document-text-outline" title="Terms & Conditions" onPress={() => router.push('/(user)/terms-conditions')} />
+            <MenuItem icon="shield-checkmark-outline" title="Privacy Policy" onPress={() => router.push('/(user)/privacy-policy')} />
+            <MenuItem icon="information-circle-outline" title="About Us" onPress={() => router.push('/(user)/about-us')} />
           </View>
         </View>
 

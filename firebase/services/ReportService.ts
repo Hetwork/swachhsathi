@@ -5,7 +5,7 @@ export interface Report {
   userId: string;
   userName: string;
   userEmail: string;
-  category: string;
+  category?: string;
   description?: string;
   imageUrl?: string;
   location: {
@@ -26,27 +26,49 @@ class ReportService {
 
   // Get all reports
   async getAllReports(): Promise<Report[]> {
-    const snapshot = await this.collection
-      .orderBy('createdAt', 'desc')
-      .get();
-    
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Report[];
+    try {
+      const snapshot = await this.collection
+        .orderBy('updatedAt', 'desc')
+        .get();
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Report[];
+    } catch (error) {
+      console.error('Error fetching all reports:', error);
+      // Fallback: fetch without ordering
+      const snapshot = await this.collection.get();
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Report[];
+    }
   }
 
   // Get user reports by userId
   async getUserReports(userId: string): Promise<Report[]> {
-    const snapshot = await this.collection
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .get();
-    
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Report[];
+    try {
+      const snapshot = await this.collection
+        .where('userId', '==', userId)
+        .orderBy('updatedAt', 'desc')
+        .get();
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Report[];
+    } catch (error) {
+      console.error('Error fetching user reports:', error);
+      // Fallback: fetch without ordering
+      const snapshot = await this.collection
+        .where('userId', '==', userId)
+        .get();
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Report[];
+    }
   }
 
   // Get single report by ID

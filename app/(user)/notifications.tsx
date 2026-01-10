@@ -123,20 +123,8 @@ const Notifications = () => {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Notifications</Text>
-          {unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount}</Text>
-            </View>
-          )}
-        </View>
-        {notifications.length > 0 && unreadCount > 0 && (
-          <TouchableOpacity onPress={markAllAsRead} style={styles.markReadButton}>
-            <Text style={styles.markReadText}>Mark all read</Text>
-          </TouchableOpacity>
-        )}
-        {(notifications.length === 0 || unreadCount === 0) && <View style={{ width: 40 }} />}
+        <Text style={styles.headerTitle}>Notifications</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <FlatList
@@ -182,7 +170,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 16,
     backgroundColor: colors.white,
@@ -192,39 +180,14 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
-  headerTitleContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: colors.textPrimary,
-  },
-  badge: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  markReadButton: {
-    padding: 8,
-  },
-  markReadText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
   },
   listContainer: {
     padding: 16,
