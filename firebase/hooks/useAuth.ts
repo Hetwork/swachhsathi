@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import AuthService from '../services/AuthService';
+import NotificationService from '../services/NotificationService';
 
 // Hook to get current auth user
 export const useAuthUser = () => {
@@ -49,9 +50,16 @@ export const useSignUp = () => {
 // Hook for sign out
 export const useSignOut = () => {
   const queryClient = useQueryClient();
+  const { data: authUser } = useAuthUser();
 
   return useMutation({
-    mutationFn: () => AuthService.signOut(),
+    mutationFn: async () => {
+      // Remove FCM token before signing out
+      if (authUser?.uid) {
+        await NotificationService.removeFCMToken(authUser.uid);
+      }
+      return AuthService.signOut();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['authUser'] });
     },

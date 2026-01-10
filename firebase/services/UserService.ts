@@ -21,6 +21,8 @@ export interface UserData {
   phone?: string;
   role?: 'user' | 'worker' | 'admin';
   ngoId?: string;
+  fcmToken?: string | null;
+  platform?: 'ios' | 'android' | 'web';
   createdAt?: FirebaseFirestoreTypes.Timestamp;
   updatedAt?: FirebaseFirestoreTypes.Timestamp;
 }
