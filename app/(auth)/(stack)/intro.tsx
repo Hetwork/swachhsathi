@@ -76,6 +76,11 @@ export default function Intro() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom}]}> 
         <AppButton title='Get Started' onPress={()=>router.push('/(auth)/(stack)/login')} />
+        <AppButton 
+          title='Register NGO' 
+          onPress={()=>router.push('/(auth)/(stack)/ngoregister')}
+          style={styles.ngoButton}
+        />
       </View>
     </Container>
   );
@@ -155,5 +160,8 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  ngoButton: {
+    backgroundColor: colors.neutral600,
   },
 });

@@ -1,3 +1,4 @@
+import ConfirmationModal from '@/component/ConfirmationModal';
 import Container from '@/component/Container';
 import { useAuthUser, useSignOut } from '@/firebase/hooks/useAuth';
 import { useAllReports } from '@/firebase/hooks/useReport';
@@ -5,8 +6,8 @@ import { useUser, useWorkers } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const AdminProfile = () => {
   const { data: authUser } = useAuthUser();
@@ -14,6 +15,7 @@ const AdminProfile = () => {
   const { data: reports } = useAllReports();
   const { data: workers } = useWorkers();
   const signOut = useSignOut();
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const stats = {
     totalReports: reports?.length || 0,
@@ -22,18 +24,9 @@ const AdminProfile = () => {
     resolvedReports: reports?.filter(r => r.status === 'resolved').length || 0,
   };
 
-  const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut.mutateAsync();
-          router.replace('/(auth)/(stack)/intro');
-        },
-      },
-    ]);
+  const handleSignOut = async () => {
+    await signOut.mutateAsync();
+    router.replace('/(auth)/(stack)/intro');
   };
 
   if (isLoading) {
@@ -58,7 +51,11 @@ const AdminProfile = () => {
 
   return (
     <Container>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
@@ -135,13 +132,26 @@ const AdminProfile = () => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <TouchableOpacity style={styles.signOutButton} onPress={() => setShowSignOutModal(true)}>
           <Ionicons name="log-out-outline" size={20} color={colors.white} />
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
 
         <Text style={styles.version}>Admin Panel v1.0.0</Text>
       </ScrollView>
+
+      <ConfirmationModal
+        visible={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+        onConfirm={handleSignOut}
+        title="Sign Out"
+        message="Are you sure you want to sign out? You'll need to log in again to access your account."
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        icon="log-out-outline"
+        iconColor={colors.error || '#EF4444'}
+        confirmColor={colors.error || '#EF4444'}
+      />
     </Container>
   );
 };
@@ -150,6 +160,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background || '#F3F4F6',
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,
