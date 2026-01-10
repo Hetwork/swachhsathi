@@ -1,3 +1,4 @@
+import ConfirmationModal from '@/component/ConfirmationModal';
 import Container from '@/component/Container';
 import { useAuthUser, useSignOut } from '@/firebase/hooks/useAuth';
 import { useAllReports } from '@/firebase/hooks/useReport';
@@ -5,14 +6,15 @@ import { useUser } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const WorkerProfile = () => {
   const { data: authUser } = useAuthUser();
   const { data: userData, isLoading } = useUser(authUser?.uid);
   const { data: reports } = useAllReports();
   const signOut = useSignOut();
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const myReports = reports?.filter(r => r.assignedTo === authUser?.uid) || [];
   const stats = {
@@ -23,17 +25,12 @@ const WorkerProfile = () => {
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut.mutateAsync();
-          router.replace('/(auth)/(stack)/intro');
-        },
-      },
-    ]);
+    setShowSignOutModal(true);
+  };
+
+  const confirmSignOut = async () => {
+    await signOut.mutateAsync();
+    router.replace('/(auth)/(stack)/intro');
   };
 
   if (isLoading) {
@@ -103,35 +100,33 @@ const WorkerProfile = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="person-outline" title="Edit Profile" onPress={() => {}} />
-            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => {}} />
-            <MenuItem icon="settings-outline" title="Settings" onPress={() => {}} />
+            <MenuItem icon="person-outline" title="Edit Profile" onPress={() => router.push('../edit-profile')} />
+            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => router.push('../notifications')} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Work</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="list-outline" title="My Tasks" onPress={() => {}} />
-            <MenuItem icon="time-outline" title="Work History" onPress={() => {}} />
-            <MenuItem icon="stats-chart-outline" title="Performance" onPress={() => {}} />
+            <MenuItem icon="list-outline" title="My Tasks" onPress={() => router.push('./reports?filter=active')} />
+            <MenuItem icon="time-outline" title="Work History" onPress={() => router.push('./reports?filter=completed')} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="help-circle-outline" title="Help & FAQ" onPress={() => {}} />
-            <MenuItem icon="chatbubble-outline" title="Contact Admin" onPress={() => {}} />
+            <MenuItem icon="help-circle-outline" title="Help & FAQ" onPress={() => router.push('../help-faq')} />
+            <MenuItem icon="chatbubble-outline" title="Contact Support" onPress={() => router.push('../contact-support')} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="document-text-outline" title="Terms & Conditions" onPress={() => {}} />
-            <MenuItem icon="shield-checkmark-outline" title="Privacy Policy" onPress={() => {}} />
-            <MenuItem icon="information-circle-outline" title="About" onPress={() => {}} />
+            <MenuItem icon="document-text-outline" title="Terms & Conditions" onPress={() => router.push('../terms-conditions')} />
+            <MenuItem icon="shield-checkmark-outline" title="Privacy Policy" onPress={() => router.push('../privacy-policy')} />
+            <MenuItem icon="information-circle-outline" title="About" onPress={() => router.push('../about-us')} />
           </View>
         </View>
 
@@ -142,6 +137,19 @@ const WorkerProfile = () => {
 
         <Text style={styles.version}>Worker App v1.0.0</Text>
       </ScrollView>
+
+      <ConfirmationModal
+        visible={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+        onConfirm={confirmSignOut}
+        title="Sign Out"
+        message="Are you sure you want to sign out of your worker account?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        icon="log-out-outline"
+        iconColor={colors.error || '#EF4444'}
+        confirmColor={colors.error || '#EF4444'}
+      />
     </Container>
   );
 };
