@@ -1,8 +1,8 @@
 import { colors } from '@/utils/colors';
-import React, { useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import MapView, { Callout, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 interface Report {
   id: string;
@@ -30,6 +30,8 @@ interface AdminMapViewProps {
   workers: Worker[];
   onReportPress?: (reportId: string) => void;
   onWorkerPress?: (workerId: string) => void;
+  focusedLocation?: { latitude: number; longitude: number };
+  highlightedReportId?: string;
 }
 
 const AdminMapView: React.FC<AdminMapViewProps> = ({
@@ -37,13 +39,37 @@ const AdminMapView: React.FC<AdminMapViewProps> = ({
   workers,
   onReportPress,
   onWorkerPress,
+  focusedLocation,
+  highlightedReportId,
 }) => {
   const mapRef = useRef<MapView>(null);
   const [showReports, setShowReports] = useState(true);
   const [showWorkers, setShowWorkers] = useState(true);
+  
+  useEffect(() => {
+    if (focusedLocation && mapRef.current) {
+      setTimeout(() => {
+        mapRef.current?.animateToRegion({
+          latitude: focusedLocation.latitude,
+          longitude: focusedLocation.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 1000);
+      }, 500);
+    }
+  }, [focusedLocation]);
 
   // Calculate initial region based on all markers
   const getInitialRegion = () => {
+    if (focusedLocation) {
+      return {
+        latitude: focusedLocation.latitude,
+        longitude: focusedLocation.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+    
     const allLocations = [
       ...reports.map(r => r.location),
       ...workers.filter(w => w.currentLocation).map(w => w.currentLocation!),
@@ -92,15 +118,21 @@ const AdminMapView: React.FC<AdminMapViewProps> = ({
         style={styles.map}
         initialRegion={getInitialRegion()}
       >
-        {showReports && reports.map((report) => (
+        {showReports && reports.map((report) => {
+          const isHighlighted = report.id === highlightedReportId;
+          return (
           <Marker
             key={`report-${report.id}`}
             coordinate={report.location}
             pinColor={getMarkerColor(report.status)}
             onPress={() => onReportPress?.(report.id)}
           >
-            <View style={[styles.reportMarker, { backgroundColor: getMarkerColor(report.status) }]}>
-              <Ionicons name="trash" size={20} color={colors.white} />
+            <View style={[
+              styles.reportMarker, 
+              { backgroundColor: getMarkerColor(report.status) },
+              isHighlighted && styles.highlightedMarker
+            ]}>
+              <Ionicons name="trash" size={isHighlighted ? 24 : 20} color={colors.white} />
             </View>
             <Callout>
               <View style={styles.callout}>
@@ -112,7 +144,8 @@ const AdminMapView: React.FC<AdminMapViewProps> = ({
               </View>
             </Callout>
           </Marker>
-        ))}
+          );
+        })}
 
         {showWorkers && workers
           .filter(w => w.isActive && w.currentLocation)
@@ -199,6 +232,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
+  },
+  highlightedMarker: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 4,
+    borderColor: '#FFD700',
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 8,
   },
   workerMarker: {
     width: 40,

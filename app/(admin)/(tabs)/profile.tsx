@@ -100,35 +100,34 @@ const AdminProfile = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="person-outline" title="Edit Profile" onPress={() => {}} />
-            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => {}} />
-            <MenuItem icon="settings-outline" title="Settings" onPress={() => {}} />
+            <MenuItem icon="person-outline" title="Edit Profile" onPress={() => router.push('../edit-profile')} />
+            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => router.push('../notifications')} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Management</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="people-outline" title="Manage Workers" onPress={() => router.push('/(admin)/(tabs)/workers')} />
-            <MenuItem icon="document-text-outline" title="All Reports" onPress={() => router.push('/(admin)/(tabs)/reports')} />
-            <MenuItem icon="stats-chart-outline" title="Analytics" onPress={() => {}} />
+            <MenuItem icon="people-outline" title="Manage Workers" onPress={() => router.push('./workers')} />
+            <MenuItem icon="document-text-outline" title="All Reports" onPress={() => router.push('./reports')} />
+            <MenuItem icon="stats-chart-outline" title="Analytics" onPress={() => router.push('../analytics')} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="help-circle-outline" title="Help & FAQ" onPress={() => {}} />
-            <MenuItem icon="mail-outline" title="Contact Support" onPress={() => {}} />
+            <MenuItem icon="help-circle-outline" title="Help & FAQ" onPress={() => router.push('../help-faq')} />
+            <MenuItem icon="mail-outline" title="Contact Support" onPress={() => router.push('../contact-support')} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="document-text-outline" title="Terms & Conditions" onPress={() => {}} />
-            <MenuItem icon="shield-checkmark-outline" title="Privacy Policy" onPress={() => {}} />
-            <MenuItem icon="information-circle-outline" title="About" onPress={() => {}} />
+            <MenuItem icon="document-text-outline" title="Terms & Conditions" onPress={() => router.push('../terms-conditions')} />
+            <MenuItem icon="shield-checkmark-outline" title="Privacy Policy" onPress={() => router.push('../privacy-policy')} />
+            <MenuItem icon="information-circle-outline" title="About" onPress={() => router.push('../about-us')} />
           </View>
         </View>
 
