@@ -66,6 +66,7 @@ const AdminReportDetails = () => {
       await updateStatus.mutateAsync({
         reportId: report.id,
         status: newStatus,
+        workerId: authUser?.uid,
       });
       setShowStatusModal(false);
       Alert.alert('Success', 'Status updated successfully');
