@@ -8,6 +8,7 @@ export interface Report {
   category?: string;
   description?: string;
   imageUrl?: string;
+  afterImageUrl?: string;
   location: {
     address: string;
     latitude: number;
@@ -17,6 +18,7 @@ export interface Report {
   status: 'pending' | 'assigned' | 'in-progress' | 'resolved';
   workerId?: string;
   workerName?: string;
+  assignedTo?: string;
   createdAt: any;
   updatedAt: any;
 }
@@ -156,6 +158,65 @@ class ReportService {
       id: doc.id,
       ...doc.data(),
     })) as Report[];
+  }
+
+  // Create status history entry
+  async createStatusHistory(
+    reportId: string,
+    status: Report['status'],
+    updatedBy: string,
+    updatedByName: string,
+    notes?: string
+  ): Promise<void> {
+    await this.collection
+      .doc(reportId)
+      .collection('reportStatus')
+      .add({
+        status,
+        updatedBy,
+        updatedByName,
+        notes: notes || '',
+        timestamp: firestore.FieldValue.serverTimestamp(),
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+  }
+
+  // Update report with after image
+  async updateAfterImage(reportId: string, afterImageUrl: string): Promise<void> {
+    await this.collection.doc(reportId).update({
+      afterImageUrl,
+      updatedAt: firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Update status with history
+  async updateStatusWithHistory(
+    reportId: string,
+    status: Report['status'],
+    updatedBy: string,
+    updatedByName: string,
+    notes?: string,
+    workerId?: string,
+    workerName?: string
+  ): Promise<void> {
+    // Update main report status
+    const updateData: any = {
+      status,
+      updatedAt: firestore.FieldValue.serverTimestamp(),
+    };
+
+    if (workerId) {
+      updateData.workerId = workerId;
+    }
+    
+    if (workerName) {
+      updateData.workerName = workerName;
+    }
+
+    await this.collection.doc(reportId).update(updateData);
+
+    // Create status history entry
+    await this.createStatusHistory(reportId, status, updatedBy, updatedByName, notes);
   }
 }
 
