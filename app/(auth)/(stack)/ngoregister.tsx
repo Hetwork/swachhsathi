@@ -137,16 +137,11 @@ const NgoRegister = () => {
         }
       });
 
-      Alert.alert(
-        'Success', 
-        'NGO registered successfully! Your account is pending admin verification. You will be notified once approved.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.push('/(admin)/(tabs)/home'),
-          },
-        ]
-      );
+      // Wait a moment to ensure documents are fully created
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Navigate to admin dashboard
+      router.replace('/(admin)/(tabs)/home');
     } catch (error: any) {
       console.error('NGO Registration error:', error);
       Alert.alert('Error', error.message || 'Failed to register NGO. Please try again.');

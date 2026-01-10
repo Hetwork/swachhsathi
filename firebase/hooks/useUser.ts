@@ -11,6 +11,8 @@ interface UserData {
   role?: 'user' | 'worker' | 'admin';
   createdAt?: any;
   ngoId?: string;
+  fcmToken?: string | null;
+  platform?: 'ios' | 'android' | 'web';
   updatedAt?: any;
 }
 

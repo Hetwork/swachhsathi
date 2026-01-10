@@ -6,14 +6,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    FlatList,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 
 const Reports = () => {
@@ -217,6 +217,14 @@ const Reports = () => {
           </View>
         )}
       </View>
+
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => router.push('/(user)/new-report')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color={colors.white} />
+      </TouchableOpacity>
     </Container>
   );
 };
@@ -410,6 +418,22 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 8,
     textAlign: "center",
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });
 

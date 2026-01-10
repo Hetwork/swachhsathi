@@ -1,24 +1,17 @@
-import { getApp } from '@react-native-firebase/app';
-import {
-  deleteObject,
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytes,
-} from '@react-native-firebase/storage';
+import storage from '@react-native-firebase/storage';
 
 class StorageService {
-  // Upload image to Firebase Storage (modular API)
+  // Upload image to Firebase Storage (React Native Firebase)
   async uploadImage(imageUri: string, path: string): Promise<string> {
     try {
-      const storageInstance = getStorage(getApp());
-      const storageRef = ref(storageInstance, path);
-
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      await uploadBytes(storageRef, blob);
-
-      return await getDownloadURL(storageRef);
+      const reference = storage().ref(path);
+      
+      // Use putFile for React Native (not uploadBytes)
+      await reference.putFile(imageUri);
+      
+      // Get download URL
+      const downloadURL = await reference.getDownloadURL();
+      return downloadURL;
     } catch (error) {
       console.error('Image upload error:', error);
       throw error;
@@ -40,9 +33,8 @@ class StorageService {
   // Delete image from storage (by full path or URL)
   async deleteImage(imagePathOrUrl: string): Promise<void> {
     try {
-      const storageInstance = getStorage(getApp());
-      const storageRef = ref(storageInstance, imagePathOrUrl);
-      await deleteObject(storageRef);
+      const reference = storage().ref(imagePathOrUrl);
+      await reference.delete();
     } catch (error) {
       console.error('Image delete error:', error);
       throw error;

@@ -14,6 +14,7 @@ const Tools = () => {
       subtitle: 'Identify waste type',
       bgColor: '#E0F2FE',
       iconColor: '#0284C7',
+      route: '/(user)/waste-scanner',
     },
     {
       id: 2,
@@ -22,6 +23,7 @@ const Tools = () => {
       subtitle: 'Learn to recycle',
       bgColor: '#DCFCE7',
       iconColor: '#16A34A',
+      route: '/(user)/recycling-info',
     },
     {
       id: 3,
@@ -30,6 +32,7 @@ const Tools = () => {
       subtitle: 'Track recycling rewards',
       bgColor: '#FEF3C7',
       iconColor: '#F59E0B',
+      route: '/(user)/recycling-ticket',
     },
     {
       id: 4,
@@ -38,6 +41,7 @@ const Tools = () => {
       subtitle: 'Reduce food waste',
       bgColor: '#FECACA',
       iconColor: '#DC2626',
+      route: '/(user)/food-saver',
     },
     {
       id: 5,
@@ -46,6 +50,7 @@ const Tools = () => {
       subtitle: 'Conservation tips',
       bgColor: '#DBEAFE',
       iconColor: '#2563EB',
+      route: '/(user)/water-management',
     },
     {
       id: 6,
@@ -54,6 +59,7 @@ const Tools = () => {
       subtitle: 'Track your impact',
       bgColor: '#E9D5FF',
       iconColor: '#9333EA',
+      route: '/(user)/citizen-score',
     },
   ];
 
@@ -79,6 +85,7 @@ const Tools = () => {
                 key={tool.id} 
                 style={styles.toolCard}
                 activeOpacity={0.7}
+                onPress={() => router.push(tool.route as any)}
               >
                 <View style={[styles.toolIconContainer, { backgroundColor: tool.bgColor }]}>
                   <Ionicons name={tool.icon as any} size={32} color={tool.iconColor} />

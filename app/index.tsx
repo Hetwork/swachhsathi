@@ -1,9 +1,9 @@
 import AuthService from '@/firebase/services/AuthService';
 import UserService from '@/firebase/services/UserService';
+import { colors } from '@/utils/colors';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { colors } from '@/utils/colors';
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,20 @@ const Index = () => {
     const checkAuth = async () => {
       const unsubscribe = AuthService.onAuthStateChanged(async (authUser) => {
         if (authUser) {
-          const userData = await UserService.getUser(authUser.uid);
+          // Retry logic to wait for user document creation
+          let userData = null;
+          let retries = 0;
+          const maxRetries = 5;
+
+          while (!userData && retries < maxRetries) {
+            userData = await UserService.getUser(authUser.uid);
+            if (!userData) {
+              // Wait 500ms before retrying
+              await new Promise(resolve => setTimeout(resolve, 500));
+              retries++;
+            }
+          }
+
           const userRole = userData?.role || 'user';
 
           if (userRole === 'admin') {
