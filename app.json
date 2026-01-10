@@ -20,7 +20,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.manthant.swachhsathi"
+      "package": "com.manthant.swachhsathi",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "901023497206",
+    "project_id": "swachhsathi-0312",
+    "storage_bucket": "swachhsathi-0312.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:901023497206:android:2c2d3eda4716cbaaeae5d7",
+        "android_client_info": {
+          "package_name": "com.manthant.swachhsathi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6yCgZzFH3wKt2nAJiRuQHQsFXFMyeddw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
