@@ -1,4 +1,5 @@
-import functions from '@react-native-firebase/functions';
+import { getApp } from '@react-native-firebase/app';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import StorageService from './StorageService';
 
 export interface AIAnalysisResult {
@@ -23,7 +24,8 @@ class AIService {
       const imageUrl = await StorageService.uploadImage(localImageUri, tempPath);
 
       // Call Firebase Function
-      const analyzeImage = functions().httpsCallable('analyzeGarbageImage');
+      const functionsInstance = getFunctions(getApp());
+      const analyzeImage = httpsCallable(functionsInstance, 'analyzeGarbageImage');
       const result = await analyzeImage({ imageUri: imageUrl });
 
       return result.data as AIAnalysisResult;
@@ -45,7 +47,8 @@ class AIService {
     afterLabels?: string[];
   }> {
     try {
-      const compareImages = functions().httpsCallable('compareBeforeAfter');
+      const functionsInstance = getFunctions(getApp());
+      const compareImages = httpsCallable(functionsInstance, 'compareBeforeAfter');
       const result = await compareImages({ beforeImageUrl, afterImageUrl });
 
       return result.data;

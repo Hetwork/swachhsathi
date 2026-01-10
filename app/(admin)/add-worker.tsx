@@ -1,6 +1,7 @@
 import AppButton from '@/component/AppButton';
 import AppTextInput from '@/component/AppTextInput';
 import Container from '@/component/Container';
+import { useAuthUser } from '@/firebase/hooks/useAuth';
 import WorkerService from '@/firebase/services/WorkerService';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ const AddWorker = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const { data: authUser } = useAuthUser();
 
   const handleAddWorker = async () => {
     if (!name || !email || !phone || !password || !confirmPassword) {
@@ -33,6 +35,11 @@ const AddWorker = () => {
       return;
     }
 
+    if (!authUser?.uid) {
+      Alert.alert('Error', 'Unable to identify current user');
+      return;
+    }
+
     setLoading(true);
     try {
       await WorkerService.createWorker({
@@ -40,6 +47,7 @@ const AddWorker = () => {
         password,
         name,
         phone,
+        ngoId: authUser.uid,
       });
       
       Alert.alert('Success', 'Worker account created successfully!', [

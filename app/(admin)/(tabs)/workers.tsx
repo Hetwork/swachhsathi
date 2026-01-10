@@ -1,5 +1,6 @@
 import Container from '@/component/Container';
-import { useWorkers } from '@/firebase/hooks/useUser';
+import { useAuthUser } from '@/firebase/hooks/useAuth';
+import { useWorkersByNGO } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,7 +8,9 @@ import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const AdminWorkers = () => {
-  const { data: workers, isLoading } = useWorkers();
+  const { data: authUser } = useAuthUser();
+  const { data: workers, isLoading } = useWorkersByNGO(authUser?.uid);
+  console.log('Workers:', workers);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   const filteredWorkers = workers?.filter(worker => {
