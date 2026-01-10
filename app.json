@@ -21,7 +21,12 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.manthant.swachhsathi",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+        "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyA48n3rhTyATy0YEYHHs18NMju8m8_dPlU"
+        }
+      }
     },
     "web": {
       "output": "static",
