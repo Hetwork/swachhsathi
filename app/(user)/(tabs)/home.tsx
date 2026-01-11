@@ -77,10 +77,6 @@ const Home = () => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerText}>Hello, {userData?.name || 'User'}</Text>
-          <TouchableOpacity style={styles.notificationButton} onPress={() => router.push('/(user)/notifications')}>
-            <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-            <View style={styles.notificationBadge} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -175,19 +171,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: colors.textPrimary,
-  },
-  notificationButton: {
-    position: 'relative',
-    padding: 8,
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
   },
   section: {
     paddingHorizontal: 20,

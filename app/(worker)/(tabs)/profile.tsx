@@ -101,7 +101,6 @@ const WorkerProfile = () => {
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.menuCard}>
             <MenuItem icon="person-outline" title="Edit Profile" onPress={() => router.push('../edit-profile')} />
-            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => router.push('../notifications')} />
           </View>
         </View>
 

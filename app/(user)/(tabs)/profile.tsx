@@ -89,8 +89,6 @@ const Profile = () => {
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.menuCard}>
             <MenuItem icon="person-outline" title="Edit Profile" onPress={() => router.push('/(user)/edit-profile')} />
-            <MenuItem icon="notifications-outline" title="Notifications" onPress={() => router.push('/(user)/notifications')} />
-            <MenuItem icon="location-outline" title="My Locations" onPress={() => router.push('/(user)/my-locations')} />
           </View>
         </View>
 

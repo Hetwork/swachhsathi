@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const TaskDetails = () => {
   const params = useLocalSearchParams();
@@ -22,6 +22,7 @@ const TaskDetails = () => {
   const [afterImage, setAfterImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   const task = reports?.find(r => r.id === params.id && r.assignedTo === authUser?.uid);
 
@@ -109,10 +110,6 @@ const TaskDetails = () => {
       // Upload after image
       const afterImageUrl = await StorageService.uploadReportImage(afterImage, authUser!.uid);
       console.log('After image uploaded:', afterImageUrl);
-
-      // Save after image URL to report document
-      await ReportService.updateAfterImage(task.id!, afterImageUrl);
-      console.log('After image URL saved to report');
       
       setUploading(false);
       setAnalyzing(true);
@@ -128,19 +125,13 @@ const TaskDetails = () => {
       setAnalyzing(false);
 
       if (comparisonResult.isClean) {
-        // Update status using the hook
-        await updateStatus.mutateAsync({
-          reportId: task.id!,
-          status: 'resolved',
-        });
-
-        // Create status history entry
-        await ReportService.createStatusHistory(
+        // Complete task with after image, status update, and history in one atomic operation
+        await ReportService.completeTaskWithAfterImage(
           task.id!,
-          'resolved',
+          afterImageUrl,
           authUser?.uid || '',
           userData?.name || 'Worker',
-          `Task completed with ${comparisonResult.cleanlinessScore}% cleanliness score`
+          `Task completed with ${comparisonResult.cleanlinessScore}% cleanliness score. AI Verified.`
         );
         
         Alert.alert(
@@ -169,7 +160,40 @@ const TaskDetails = () => {
       );
     }
   };
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'N/A';
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'N/A';
+    }
+  };
 
+  const getStatusSteps = () => {
+    const steps = [
+      { key: 'pending', label: 'Report Submitted', icon: 'document-text', description: 'Report received from citizen' },
+      { key: 'assigned', label: 'Assigned to You', icon: 'person', description: 'Task has been assigned to you' },
+      { key: 'in-progress', label: 'In Progress', icon: 'construct', description: 'You are working on this task' },
+      { key: 'resolved', label: 'Completed', icon: 'checkmark-done', description: 'Task has been completed' },
+    ];
+
+    const statusOrder = ['pending', 'assigned', 'in-progress', 'resolved'];
+    const currentIndex = statusOrder.indexOf(task?.status || 'assigned');
+
+    return steps.map((step, index) => ({
+      ...step,
+      completed: index <= currentIndex,
+      active: index === currentIndex,
+    }));
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'assigned': return '#3B82F6';
@@ -235,15 +259,7 @@ const TaskDetails = () => {
               <Ionicons name="calendar" size={20} color={colors.primary} />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Reported On</Text>
-                <Text style={styles.infoValue}>
-                  {new Date(task.createdAt).toLocaleDateString('en-US', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Text>
+                <Text style={styles.infoValue}>{formatDate(task.createdAt)}</Text>
               </View>
             </View>
           </View>
@@ -261,6 +277,15 @@ const TaskDetails = () => {
             />
             <Text style={styles.locationAddress}>{task.location.address}</Text>
           </View>
+
+          {/* Status Tracking Button */}
+          <TouchableOpacity
+            style={styles.statusTrackButton}
+            onPress={() => setShowStatusModal(true)}
+          >
+            <Ionicons name="time-outline" size={20} color={colors.primary} />
+            <Text style={styles.statusTrackButtonText}>Track Task Status</Text>
+          </TouchableOpacity>
 
           {task.status === 'assigned' && (
             <TouchableOpacity 
@@ -316,13 +341,94 @@ const TaskDetails = () => {
           )}
 
           {task.status === 'resolved' && (
-            <View style={styles.completedBanner}>
-              <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-              <Text style={styles.completedText}>Task Completed</Text>
-            </View>
+            <>
+              <View style={styles.completedBanner}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.completedText}>Task Completed</Text>
+              </View>
+
+              {task.afterImageUrl && (
+                <View style={styles.afterImageSection}>
+                  <Text style={styles.sectionLabel}>After Cleaning Photo</Text>
+                  <Image source={{ uri: task.afterImageUrl }} style={styles.completedAfterPhoto} resizeMode="contain" />
+                  <View style={styles.imageCompareNote}>
+                    <Ionicons name="information-circle" size={16} color={colors.primary} />
+                    <Text style={styles.imageCompareText}>This photo was verified by AI to confirm the cleaning was completed successfully.</Text>
+                  </View>
+                </View>
+              )}
+            </>
           )}
         </View>
       </ScrollView>
+
+      {/* Status Tracking Modal */}
+      <Modal
+        visible={showStatusModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowStatusModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Task Status Timeline</Text>
+              <TouchableOpacity onPress={() => setShowStatusModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false}>
+              {getStatusSteps().map((step, index) => (
+                <View key={step.key} style={styles.timelineItem}>
+                  <View style={styles.timelineIndicator}>
+                    <View style={[
+                      styles.timelineDot,
+                      step.completed && styles.timelineDotCompleted,
+                      step.active && styles.timelineDotActive
+                    ]}>
+                      <Ionicons
+                        name={step.icon as any}
+                        size={step.active ? 24 : 20}
+                        color={step.completed ? colors.white : colors.textSecondary}
+                      />
+                    </View>
+                    {index < getStatusSteps().length - 1 && (
+                      <View style={[
+                        styles.timelineLine,
+                        step.completed && styles.timelineLineCompleted
+                      ]} />
+                    )}
+                  </View>
+                  <View style={styles.timelineContent}>
+                    <Text style={[
+                      styles.timelineLabel,
+                      step.completed && styles.timelineLabelCompleted,
+                      step.active && styles.timelineLabelActive
+                    ]}>
+                      {step.label}
+                    </Text>
+                    <Text style={styles.timelineDescription}>
+                      {step.description}
+                    </Text>
+                    {step.active && (
+                      <View style={styles.currentBadge}>
+                        <Text style={styles.currentBadgeText}>Current Status</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <Text style={styles.lastUpdated}>
+                Last updated: {formatDate(task.updatedAt)}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Container>
   );
 };
@@ -573,6 +679,172 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#10B981',
+  },
+  afterImageSection: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 16,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  completedAfterPhoto: {
+    width: '100%',
+    height: 250,
+    borderRadius: 12,
+    backgroundColor: colors.background,
+  },
+  imageCompareNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: colors.primary + '10',
+    borderRadius: 8,
+  },
+  imageCompareText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  statusTrackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    marginBottom: 16,
+  },
+  statusTrackButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  timelineContainer: {
+    padding: 20,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    paddingBottom: 24,
+  },
+  timelineIndicator: {
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  timelineDot: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineDotCompleted: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  timelineDotActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: colors.border,
+    marginTop: 4,
+  },
+  timelineLineCompleted: {
+    backgroundColor: colors.primary,
+  },
+  timelineContent: {
+    flex: 1,
+    paddingTop: 4,
+  },
+  timelineLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  timelineLabelCompleted: {
+    color: colors.textPrimary,
+  },
+  timelineLabelActive: {
+    color: colors.primary,
+    fontSize: 18,
+  },
+  timelineDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  currentBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  currentBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.white,
+  },
+  modalFooter: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  lastUpdated: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });
 

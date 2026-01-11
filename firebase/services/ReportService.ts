@@ -218,6 +218,31 @@ class ReportService {
     // Create status history entry
     await this.createStatusHistory(reportId, status, updatedBy, updatedByName, notes);
   }
+
+  // Complete task with after image (combines afterImageUrl update, status change, and history)
+  async completeTaskWithAfterImage(
+    reportId: string,
+    afterImageUrl: string,
+    completedBy: string,
+    completedByName: string,
+    notes?: string
+  ): Promise<void> {
+    // Update report with after image and resolved status
+    await this.collection.doc(reportId).update({
+      afterImageUrl,
+      status: 'resolved',
+      updatedAt: firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Create status history entry
+    await this.createStatusHistory(
+      reportId,
+      'resolved',
+      completedBy,
+      completedByName,
+      notes || 'Task completed with after image verification'
+    );
+  }
 }
 
 export default new ReportService();
