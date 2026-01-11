@@ -19,6 +19,7 @@ export interface Report {
   workerId?: string;
   workerName?: string;
   assignedTo?: string;
+  ngoId?: string; // NGO that should handle this report
   createdAt: any;
   updatedAt: any;
 }

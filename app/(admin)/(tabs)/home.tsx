@@ -1,6 +1,6 @@
 import Container from '@/component/Container';
 import { useAuthUser } from '@/firebase/hooks/useAuth';
-import { useAllReports } from '@/firebase/hooks/useReport';
+import { useNGOReports, useNGOReportStats } from '@/firebase/hooks/useNGOReports';
 import { useUser } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,15 +11,18 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 const AdminHome = () => {
   const { data: authUser } = useAuthUser();
   const { data: userData } = useUser(authUser?.uid);
-  const { data: reports, isLoading } = useAllReports();
+  const { data: reports, isLoading } = useNGOReports(userData?.ngoId);
+  const { data: reportStats } = useNGOReportStats(userData?.ngoId);
 
-  const stats = {
-    total: reports?.length || 0,
-    pending: reports?.filter(r => r.status === 'pending').length || 0,
-    assigned: reports?.filter(r => r.status === 'assigned').length || 0,
-    inProgress: reports?.filter(r => r.status === 'in-progress').length || 0,
-    resolved: reports?.filter(r => r.status === 'resolved').length || 0,
-    highSeverity: reports?.filter(r => r.severity === 'High').length || 0,
+  const stats = reportStats || {
+    total: 0,
+    pending: 0,
+    assigned: 0,
+    inProgress: 0,
+    resolved: 0,
+    highSeverity: 0,
+    mediumSeverity: 0,
+    lowSeverity: 0,
   };
 
   const StatCard = ({ icon, title, value, color, bgColor }: any) => (
@@ -203,13 +206,6 @@ const AdminHome = () => {
             subtitle="View and manage worker accounts"
             color="#8B5CF6"
             onPress={() => router.push('./workers')}
-          />
-          <QuickActionCard
-            icon="stats-chart"
-            title="View Analytics"
-            subtitle="Reports, trends, and insights"
-            color="#10B981"
-            onPress={() => router.push('../analytics')}
           />
           <QuickActionCard
             icon="map"

@@ -1,17 +1,23 @@
 import Container from '@/component/Container';
 import { useAuthUser } from '@/firebase/hooks/useAuth';
-import { useWorkersByNGO } from '@/firebase/hooks/useUser';
+import { useAssignReportToWorker, usePendingNGOReports } from '@/firebase/hooks/useNGOReports';
+import { useUser, useWorkersByNGO } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const AdminWorkers = () => {
   const { data: authUser } = useAuthUser();
+  const { data: userData } = useUser(authUser?.uid);
   const { data: workers, isLoading } = useWorkersByNGO(authUser?.uid);
+  const { data: pendingReports, isLoading: isLoadingReports } = usePendingNGOReports(userData?.ngoId);
+  const assignMutation = useAssignReportToWorker();
   console.log('Workers:', workers);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [selectedWorker, setSelectedWorker] = useState<any>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   const filteredWorkers = workers?.filter(worker => {
     if (filter === 'all') return true;
@@ -19,6 +25,23 @@ const AdminWorkers = () => {
     if (filter === 'inactive') return worker.isActive !== true;
     return true;
   }) || [];
+
+  const handleAssignTask = async (reportId: string, reportTitle: string) => {
+    if (!selectedWorker || !userData?.ngoId) return;
+
+    try {
+      await assignMutation.mutateAsync({
+        reportId,
+        ngoId: userData.ngoId,
+        workerId: selectedWorker.uid,
+        workerName: selectedWorker.name,
+      });
+      Alert.alert('Success', `Task "${reportTitle}" assigned to ${selectedWorker.name}`);
+      setShowAssignModal(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to assign task');
+    }
+  };
 
   const FilterChip = ({ label, value }: any) => (
     <TouchableOpacity
@@ -85,7 +108,13 @@ const AdminWorkers = () => {
           <Ionicons name="person-outline" size={16} color={colors.primary} />
           <Text style={styles.actionButtonText}>View Profile</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.actionButtonPrimary]}
+          onPress={() => {
+            setSelectedWorker(item);
+            setShowAssignModal(true);
+          }}
+        >
           <Ionicons name="add-circle-outline" size={16} color={colors.white} />
           <Text style={[styles.actionButtonText, styles.actionButtonTextPrimary]}>Assign Task</Text>
         </TouchableOpacity>
@@ -131,6 +160,73 @@ const AdminWorkers = () => {
           <Text style={styles.emptySubtext}>Add workers to get started</Text>
         </View>
       )}
+
+      {/* Assign Task Modal */}
+      <Modal
+        visible={showAssignModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAssignModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Assign Task to {selectedWorker?.name}</Text>
+              <TouchableOpacity onPress={() => setShowAssignModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>Select a pending report to assign:</Text>
+
+            <ScrollView style={styles.reportsScrollView}>
+              {isLoadingReports ? (
+                <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+              ) : pendingReports && pendingReports.length > 0 ? (
+                pendingReports.map((report) => (
+                  <TouchableOpacity
+                    key={report.id}
+                    style={styles.reportItem}
+                    onPress={() => handleAssignTask(report.id, report.category || 'Report')}
+                  >
+                    <View style={styles.reportItemHeader}>
+                      <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+                      <View style={styles.reportItemInfo}>
+                        <Text style={styles.reportItemTitle}>{report.category || 'Report'}</Text>
+                        <Text style={styles.reportItemDescription} numberOfLines={2}>
+                          {report.description || 'No description'}
+                        </Text>
+                        <View style={styles.reportItemFooter}>
+                          <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+                          <Text style={styles.reportItemLocation} numberOfLines={1}>
+                            {report.location?.address || 'Unknown location'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    {report.severity && (
+                      <View style={[styles.severityTag, {
+                        backgroundColor: report.severity === 'High' ? '#FEE2E2' : report.severity === 'Medium' ? '#FEF3C7' : '#D1FAE5'
+                      }]}>
+                        <Text style={[styles.severityTagText, {
+                          color: report.severity === 'High' ? '#EF4444' : report.severity === 'Medium' ? '#F59E0B' : '#10B981'
+                        }]}>
+                          {report.severity}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.emptyReportsContainer}>
+                  <Ionicons name="checkmark-done-outline" size={48} color={colors.textSecondary} />
+                  <Text style={styles.emptyReportsText}>No pending reports</Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </Container>
   );
 };
@@ -336,6 +432,98 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 16,
+  },
+  reportsScrollView: {
+    maxHeight: 400,
+  },
+  reportItem: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reportItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  reportItemInfo: {
+    flex: 1,
+  },
+  reportItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  reportItemDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  reportItemFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  reportItemLocation: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  severityTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  severityTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  emptyReportsContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyReportsText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginTop: 12,
   },
 });
 

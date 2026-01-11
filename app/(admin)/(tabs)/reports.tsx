@@ -1,5 +1,7 @@
 import Container from '@/component/Container';
-import { useAllReports } from '@/firebase/hooks/useReport';
+import { useAuthUser } from '@/firebase/hooks/useAuth';
+import { useNGOReports } from '@/firebase/hooks/useNGOReports';
+import { useUser } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,7 +9,9 @@ import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const AdminReports = () => {
-  const { data: reports, isLoading } = useAllReports();
+  const { data: authUser } = useAuthUser();
+  const { data: userData } = useUser(authUser?.uid);
+  const { data: reports, isLoading } = useNGOReports(userData?.ngoId);
   const [filter, setFilter] = useState<'all' | 'pending' | 'assigned' | 'in-progress' | 'resolved'>('all');
   const [severityFilter, setSeverityFilter] = useState<'all' | 'High' | 'Medium' | 'Low'>('all');
 
@@ -36,6 +40,14 @@ const AdminReports = () => {
     return statusMatch && severityMatch;
   }) || [];
 
+  const stats = {
+    total: reports?.length || 0,
+    pending: reports?.filter(r => r.status === 'pending').length || 0,
+    assigned: reports?.filter(r => r.status === 'assigned').length || 0,
+    inProgress: reports?.filter(r => r.status === 'in-progress').length || 0,
+    resolved: reports?.filter(r => r.status === 'resolved').length || 0,
+  };
+
   const FilterChip = ({ label, value, active, onPress }: any) => (
     <TouchableOpacity
       style={[styles.filterChip, active && styles.filterChipActive]}
@@ -63,16 +75,20 @@ const AdminReports = () => {
             </View>
           )}
           <View style={styles.reportHeaderInfo}>
-            <Text style={styles.reportCategory}>{item.category}</Text>
+            <Text style={styles.reportCategory}>{item.category || 'Report'}</Text>
+            <Text style={styles.reportDescription} numberOfLines={2}>
+              {item.description || 'No description provided'}
+            </Text>
             <View style={styles.userRow}>
               <Ionicons name="person-outline" size={12} color={colors.textSecondary} />
               <Text style={styles.userName}>{item.userName}</Text>
             </View>
             <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.reportLocation} numberOfLines={1}>{item.location.address}</Text>
+              <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+              <Text style={styles.reportLocation} numberOfLines={1}>
+                {item.location?.address || 'Unknown location'}
+              </Text>
             </View>
-            <Text style={styles.reportTime}>{getTimeAgo(item.createdAt)}</Text>
           </View>
         </View>
 
@@ -90,14 +106,17 @@ const AdminReports = () => {
                 size={14} 
                 color={item.severity === 'High' ? '#EF4444' : item.severity === 'Medium' ? '#F59E0B' : '#10B981'} 
               />
-              <Text style={styles.severityText}>{item.severity}</Text>
+              <Text style={[styles.severityText, { color: item.severity === 'High' ? '#EF4444' : item.severity === 'Medium' ? '#F59E0B' : '#10B981' }]}>
+                {item.severity}
+              </Text>
             </View>
           )}
-          {item.status === 'pending' && (
-            <TouchableOpacity style={styles.assignButton}>
-              <Ionicons name="person-add" size={14} color={colors.primary} />
-              <Text style={styles.assignButtonText}>Assign</Text>
-            </TouchableOpacity>
+          <Text style={styles.reportTime}>{getTimeAgo(item.createdAt)}</Text>
+          {item.workerName && (
+            <View style={styles.workerBadge}>
+              <Ionicons name="person-circle" size={14} color="#8B5CF6" />
+              <Text style={styles.workerText}>{item.workerName}</Text>
+            </View>
           )}
         </View>
       </TouchableOpacity>
@@ -109,7 +128,6 @@ const AdminReports = () => {
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Manage Reports</Text>
-          <Text style={styles.headerSubtitle}>{filteredReports.length} reports</Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity 
@@ -120,6 +138,7 @@ const AdminReports = () => {
           </TouchableOpacity>
         </View>
       </View>
+
 
       <View style={styles.filtersSection}>
         <Text style={styles.filterLabel}>Status</Text>
@@ -205,6 +224,33 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: colors.white,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
   searchButton: {
     padding: 8,
@@ -292,6 +338,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  reportDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: 6,
   },
   userRow: {
     flexDirection: 'row',
@@ -310,13 +363,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   reportLocation: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
     flex: 1,
   },
   reportTime: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
+    marginLeft: 'auto',
   },
   reportFooter: {
     flexDirection: 'row',
@@ -344,22 +398,21 @@ const styles = StyleSheet.create({
   severityText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.textSecondary,
   },
-  assignButton: {
+  workerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: colors.primary + '20',
     gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#EDE9FE',
+    borderRadius: 8,
     marginLeft: 'auto',
   },
-  assignButtonText: {
-    fontSize: 12,
+  workerText: {
+    fontSize: 11,
     fontWeight: '600',
-    color: colors.primary,
+    color: '#8B5CF6',
   },
   loadingContainer: {
     flex: 1,

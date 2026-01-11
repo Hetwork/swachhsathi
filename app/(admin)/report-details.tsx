@@ -1,9 +1,11 @@
 import AssignWorkerModal from '@/component/AssignWorkerModal';
 import ChangeStatusModal from '@/component/ChangeStatusModal';
 import Container from '@/component/Container';
+import LocationMap from '@/component/LocationMap';
 import { useAuthUser } from '@/firebase/hooks/useAuth';
-import { useAllReports, useUpdateReportStatus } from '@/firebase/hooks/useReport';
-import { useWorkers } from '@/firebase/hooks/useUser';
+import { useAssignReportToWorker } from '@/firebase/hooks/useNGOReports';
+import { useReport, useUpdateReportStatus } from '@/firebase/hooks/useReport';
+import { useUser, useWorkersByNGO } from '@/firebase/hooks/useUser';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,15 +14,15 @@ import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, Touchabl
 
 const AdminReportDetails = () => {
   const params = useLocalSearchParams();
-  const { data: reports, isLoading: reportsLoading } = useAllReports();
   const { data: authUser } = useAuthUser();
-  const { data: workers } = useWorkers();
+  const { data: userData } = useUser(authUser?.uid);
+  const { data: report, isLoading: reportsLoading } = useReport(params.id as string);
+  const { data: workers } = useWorkersByNGO(userData?.ngoId);
+  const assignWorker = useAssignReportToWorker();
   const updateStatus = useUpdateReportStatus();
   
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
-
-  const report = reports?.find(r => r.id === params.id);
 
   if (reportsLoading) {
     return (
@@ -49,15 +51,21 @@ const AdminReportDetails = () => {
   const handleAssignWorker = async (workerId: string, workerName: string) => {
     console.log('Assigning worker:', workerId, workerName);
     try {
-      await updateStatus.mutateAsync({
+      if (!userData?.ngoId || !report?.id) {
+        Alert.alert('Error', 'Missing required information');
+        return;
+      }
+
+      await assignWorker.mutateAsync({
         reportId: report.id,
-        status: 'assigned',
+        ngoId: userData.ngoId,
         workerId: workerId,
+        workerName: workerName,
       });
       setShowWorkerModal(false);
       Alert.alert('Success', `Report assigned to ${workerName}`);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to assign worker');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to assign worker');
     }
   };
 
@@ -75,21 +83,37 @@ const AdminReportDetails = () => {
     }
   };
 
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'N/A';
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      return 'N/A';
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return '#F59E0B';
-      case 'assigned': return '#3B82F6';
-      case 'in-progress': return '#8B5CF6';
-      case 'resolved': return '#10B981';
-      default: return colors.textSecondary;
+      case 'pending': return { bg: '#FEF3C7', text: '#F59E0B', icon: 'time-outline' };
+      case 'assigned': return { bg: '#DBEAFE', text: '#3B82F6', icon: 'person-outline' };
+      case 'in-progress': return { bg: '#E0E7FF', text: '#6366F1', icon: 'sync-outline' };
+      case 'resolved': return { bg: '#D1FAE5', text: '#10B981', icon: 'checkmark-circle-outline' };
+      default: return { bg: '#F3F4F6', text: '#6B7280', icon: 'help-outline' };
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return '#EF4444';
-      case 'medium': return '#F59E0B';
-      case 'low': return '#10B981';
+      case 'High': return '#EF4444';
+      case 'Medium': return '#F59E0B';
+      case 'Low': return '#10B981';
       default: return colors.textSecondary;
     }
   };
@@ -113,77 +137,104 @@ const AdminReportDetails = () => {
 
         <View style={styles.content}>
           <View style={styles.statusRow}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(report.status) + '20' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(report.status) }]}>
-                {report.status.toUpperCase()}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(report.status).bg }]}>
+              <Ionicons name={getStatusColor(report.status).icon as any} size={16} color={getStatusColor(report.status).text} />
+              <Text style={[styles.statusText, { color: getStatusColor(report.status).text }]}>
+                {report.status.charAt(0).toUpperCase() + report.status.slice(1).replace('-', ' ')}
               </Text>
             </View>
             {report.severity && (
-              <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(report.severity) + '20' }]}>
+              <View style={styles.severityBadge}>
+                <Ionicons
+                  name={report.severity === 'High' ? 'alert-circle' : report.severity === 'Medium' ? 'warning' : 'information-circle'}
+                  size={16}
+                  color={getSeverityColor(report.severity)}
+                />
                 <Text style={[styles.severityText, { color: getSeverityColor(report.severity) }]}>
-                  {report.severity.toUpperCase()}
+                  {report.severity} Severity
                 </Text>
               </View>
             )}
           </View>
 
+          <Text style={styles.category}>{report.category || 'Report'}</Text>
           <Text style={styles.description}>{report.description}</Text>
 
-          <View style={styles.infoCard}>
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>Report Information</Text>
+
             <View style={styles.infoRow}>
-              <Ionicons name="location" size={20} color={colors.primary} />
+              <Ionicons name="person-outline" size={20} color={colors.primary} />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Reported By</Text>
+                <Text style={styles.infoValue}>{report.userName}</Text>
+                <Text style={styles.infoSubtext}>{report.userEmail}</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Reported On</Text>
+                <Text style={styles.infoValue}>{formatDate(report.createdAt)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Ionicons name="location-outline" size={20} color={colors.primary} />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue}>
+                <Text style={styles.infoValue}>{report.location?.address || 'N/A'}</Text>
+                <Text style={styles.infoSubtext}>
                   {report.location?.latitude?.toFixed(6)}, {report.location?.longitude?.toFixed(6)}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.infoRow}>
-              <Ionicons name="calendar" size={20} color={colors.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Reported On</Text>
-                <Text style={styles.infoValue}>
-                  {new Date(report.createdAt).toLocaleDateString('en-US', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Text>
-              </View>
-            </View>
-
-            {report.category && (
-              <View style={styles.infoRow}>
-                <Ionicons name="pricetag" size={20} color={colors.primary} />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Category</Text>
-                  <Text style={styles.infoValue}>{report.category}</Text>
-                </View>
-              </View>
-            )}
-
             {assignedWorker && (
               <View style={styles.infoRow}>
-                <Ionicons name="person" size={20} color={colors.primary} />
+                <Ionicons name="person-circle-outline" size={20} color={colors.primary} />
                 <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Assigned To</Text>
+                  <Text style={styles.infoLabel}>Assigned Worker</Text>
                   <Text style={styles.infoValue}>{assignedWorker.name}</Text>
                 </View>
               </View>
             )}
           </View>
 
-          <TouchableOpacity 
-            style={styles.mapButton} 
-            onPress={() => router.push(`/(admin)/map-view?lat=${report.location?.latitude}&lon=${report.location?.longitude}&reportId=${report.id}`)}
-          >
-            <Ionicons name="map" size={20} color={colors.white} />
-            <Text style={styles.mapButtonText}>View on Map</Text>
-          </TouchableOpacity>
+          {/* Before/After Images for Resolved Reports */}
+          {report.status === 'resolved' && report.afterImageUrl && (
+            <View style={styles.comparisonSection}>
+              <Text style={styles.sectionTitle}>Before & After</Text>
+              <View style={styles.imageComparisonContainer}>
+                <View style={styles.imageComparisonItem}>
+                  <Text style={styles.imageComparisonLabel}>Before</Text>
+                  {report.imageUrl && (
+                    <Image source={{ uri: report.imageUrl }} style={styles.comparisonImage} resizeMode="cover" />
+                  )}
+                </View>
+                <View style={styles.imageComparisonItem}>
+                  <Text style={styles.imageComparisonLabel}>After</Text>
+                  <Image source={{ uri: report.afterImageUrl }} style={styles.comparisonImage} resizeMode="cover" />
+                </View>
+              </View>
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="shield-checkmark" size={18} color="#10B981" />
+                <Text style={styles.verifiedText}>AI Verified - Cleaning Confirmed</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Location Map */}
+          <View style={styles.mapSection}>
+            <Text style={styles.sectionTitle}>Report Location</Text>
+            <LocationMap
+              latitude={report.location?.latitude || 0}
+              longitude={report.location?.longitude || 0}
+              title={report.category || 'Report Location'}
+              description={report.location?.address}
+            />
+          </View>
 
           {report.status === 'pending' && (
             <TouchableOpacity style={styles.assignButton} onPress={() => setShowWorkerModal(true)}>
@@ -255,22 +306,31 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 12,
+    gap: 6,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   severityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   severityText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
+  },
+  category: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 12,
   },
   description: {
     fontSize: 16,
@@ -278,16 +338,27 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 20,
   },
-  infoCard: {
+  infoSection: {
     backgroundColor: colors.white,
     borderRadius: 16,
     padding: 16,
-    gap: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    marginBottom: 16,
     gap: 12,
   },
   infoContent: {
@@ -296,12 +367,59 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textPrimary,
-    fontWeight: '500',
+    marginBottom: 2,
+  },
+  infoSubtext: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  mapSection: {
+    marginBottom: 20,
+  },
+  comparisonSection: {
+    marginBottom: 20,
+  },
+  imageComparisonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  imageComparisonItem: {
+    flex: 1,
+  },
+  imageComparisonLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  comparisonImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: colors.background,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#D1FAE5',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
+  verifiedText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#10B981',
   },
   mapButton: {
     flexDirection: 'row',
