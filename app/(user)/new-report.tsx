@@ -1,6 +1,11 @@
 import AppButton from '@/component/AppButton';
 import AppTextInput from '@/component/AppTextInput';
 import Container from '@/component/Container';
+import { useAuthUser } from '@/firebase/hooks/useAuth';
+import { useCreateReport } from '@/firebase/hooks/useReport';
+import { useUser } from '@/firebase/hooks/useUser';
+import AIService from '@/firebase/services/AIService';
+import StorageService from '@/firebase/services/StorageService';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,11 +13,6 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import AIService from '@/firebase/services/AIService';
-import StorageService from '@/firebase/services/StorageService';
-import { useCreateReport } from '@/firebase/hooks/useReport';
-import { useAuthUser } from '@/firebase/hooks/useAuth';
-import { useUser } from '@/firebase/hooks/useUser';
 
 const NewReport = () => {
   const { data: authUser } = useAuthUser();
@@ -117,7 +117,13 @@ const NewReport = () => {
 
     setSubmitting(true);
     try {
+      console.log('Uploading image from:', image);
       const imageUrl = await StorageService.uploadReportImage(image, authUser.uid);
+      console.log('Image uploaded to Firebase:', imageUrl);
+      
+      if (!imageUrl || !imageUrl.startsWith('http')) {
+        throw new Error('Invalid Firebase URL received');
+      }
       
       await createReport.mutateAsync({
         userId: authUser.uid,
@@ -139,8 +145,8 @@ const NewReport = () => {
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit report. Please try again.');
       console.error('Submit error:', error);
+      Alert.alert('Error', `Failed to submit report: ${error.message || 'Please try again.'}`);
     } finally {
       setSubmitting(false);
     }

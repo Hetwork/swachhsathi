@@ -1,4 +1,6 @@
 import Container from '@/component/Container';
+import { useAuthUser } from '@/firebase/hooks/useAuth';
+import StorageService from '@/firebase/services/StorageService';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { getApp } from '@react-native-firebase/app';
@@ -17,6 +19,7 @@ interface WasteAnalysisResult {
 }
 
 const WasteScanner = () => {
+  const { data: authUser } = useAuthUser();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<WasteAnalysisResult | null>(null);
@@ -72,19 +75,35 @@ const WasteScanner = () => {
   const analyzeWaste = async () => {
     if (!selectedImage) return;
 
+    if (!authUser) {
+      Alert.alert('Error', 'You must be logged in to use this feature');
+      return;
+    }
+
     setAnalyzing(true);
     try {
+      // Upload image to Firebase Storage first to get a proper HTTPS URL
+      console.log('Uploading image from:', selectedImage);
+      const tempPath = `waste-scanner/${authUser.uid}/${Date.now()}.jpg`;
+      const firebaseImageUrl = await StorageService.uploadImage(selectedImage, tempPath);
+      console.log('Image uploaded to Firebase:', firebaseImageUrl);
+
+      if (!firebaseImageUrl || !firebaseImageUrl.startsWith('http')) {
+        throw new Error('Invalid Firebase URL received');
+      }
+
+      // Now call the Cloud Function with the Firebase Storage URL
       const functions = getFunctions(getApp());
       const analyzeWasteImage = httpsCallable<{ imageUri: string }, WasteAnalysisResult>(
         functions,
         'analyzeWasteImage'
       );
 
-      const response = await analyzeWasteImage({ imageUri: selectedImage });
+      const response = await analyzeWasteImage({ imageUri: firebaseImageUrl });
       setResult(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing waste:', error);
-      Alert.alert('Error', 'Failed to analyze waste. Please try again.');
+      Alert.alert('Error', `Failed to analyze waste: ${error.message || 'Please try again.'}`);
     } finally {
       setAnalyzing(false);
     }
