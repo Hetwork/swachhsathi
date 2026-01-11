@@ -46,6 +46,7 @@ const AdminMapView: React.FC<AdminMapViewProps> = ({
   const [showReports, setShowReports] = useState(true);
   const [showWorkers, setShowWorkers] = useState(true);
   
+  // Center on focused location
   useEffect(() => {
     if (focusedLocation && mapRef.current) {
       setTimeout(() => {
@@ -59,6 +60,16 @@ const AdminMapView: React.FC<AdminMapViewProps> = ({
     }
   }, [focusedLocation]);
 
+  // Center on all reports when they load
+  useEffect(() => {
+    if (!focusedLocation && reports.length > 0 && mapRef.current) {
+      setTimeout(() => {
+        const region = getInitialRegion();
+        mapRef.current?.animateToRegion(region, 1000);
+      }, 500);
+    }
+  }, [reports]);
+
   // Calculate initial region based on all markers
   const getInitialRegion = () => {
     if (focusedLocation) {
@@ -70,17 +81,30 @@ const AdminMapView: React.FC<AdminMapViewProps> = ({
       };
     }
     
-    const allLocations = [
-      ...reports.map(r => r.location),
-      ...workers.filter(w => w.currentLocation).map(w => w.currentLocation!),
-    ];
+    // Prioritize reports for centering
+    const reportLocations = reports.map(r => r.location);
+    const workerLocations = workers.filter(w => w.currentLocation).map(w => w.currentLocation!);
+    
+    // Use only reports if available, otherwise include workers
+    const allLocations = reportLocations.length > 0 ? reportLocations : [...reportLocations, ...workerLocations];
 
     if (allLocations.length === 0) {
+      // Default to Delhi, India
       return {
         latitude: 28.6139,
         longitude: 77.2090,
         latitudeDelta: 0.1,
         longitudeDelta: 0.1,
+      };
+    }
+
+    if (allLocations.length === 1) {
+      // Single location - close zoom
+      return {
+        latitude: allLocations[0].latitude,
+        longitude: allLocations[0].longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
       };
     }
 
@@ -92,11 +116,14 @@ const AdminMapView: React.FC<AdminMapViewProps> = ({
     const minLng = Math.min(...longitudes);
     const maxLng = Math.max(...longitudes);
 
+    const latDelta = (maxLat - minLat) * 1.5;
+    const lngDelta = (maxLng - minLng) * 1.5;
+
     return {
       latitude: (minLat + maxLat) / 2,
       longitude: (minLng + maxLng) / 2,
-      latitudeDelta: (maxLat - minLat) * 1.5 || 0.1,
-      longitudeDelta: (maxLng - minLng) * 1.5 || 0.1,
+      latitudeDelta: Math.max(latDelta, 0.02), // Minimum zoom level
+      longitudeDelta: Math.max(lngDelta, 0.02),
     };
   };
 

@@ -3,6 +3,7 @@ import Container from '@/component/Container';
 import { useAuthUser, useSignOut } from '@/firebase/hooks/useAuth';
 import { useAllReports } from '@/firebase/hooks/useReport';
 import { useUser, useWorkers } from '@/firebase/hooks/useUser';
+import { useNGO } from '@/firebase/hooks/useNGO';
 import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -12,6 +13,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 const AdminProfile = () => {
   const { data: authUser } = useAuthUser();
   const { data: userData, isLoading } = useUser(authUser?.uid);
+  const { data: ngoData } = useNGO(userData?.ngoId);
   const { data: reports } = useAllReports();
   const { data: workers } = useWorkers();
   const signOut = useSignOut();
@@ -96,6 +98,42 @@ const AdminProfile = () => {
             <Text style={styles.statLabel}>Resolved</Text>
           </View>
         </View>
+
+        {ngoData && (
+          <View style={styles.ngoInfoCard}>
+            <View style={styles.ngoHeader}>
+              <View style={styles.ngoIconContainer}>
+                <Ionicons name="business" size={24} color={colors.primary} />
+              </View>
+              <View style={styles.ngoHeaderText}>
+                <Text style={styles.ngoTitle}>Organization</Text>
+                <Text style={styles.ngoName}>{ngoData.ngoName}</Text>
+              </View>
+            </View>
+            <View style={styles.ngoDetails}>
+              <View style={styles.ngoDetailRow}>
+                <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.ngoDetailLabel}>Contact Person:</Text>
+                <Text style={styles.ngoDetailValue}>{ngoData.contactPerson}</Text>
+              </View>
+              <View style={styles.ngoDetailRow}>
+                <Ionicons name="call-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.ngoDetailLabel}>Phone:</Text>
+                <Text style={styles.ngoDetailValue}>{ngoData.phone}</Text>
+              </View>
+              <View style={styles.ngoDetailRow}>
+                <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.ngoDetailLabel}>Location:</Text>
+                <Text style={styles.ngoDetailValue}>{ngoData.city}</Text>
+              </View>
+              <View style={styles.ngoDetailRow}>
+                <Ionicons name="document-text-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.ngoDetailLabel}>Reg. No:</Text>
+                <Text style={styles.ngoDetailValue}>{ngoData.registrationNumber}</Text>
+              </View>
+            </View>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -259,6 +297,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  ngoInfoCard: {
+    backgroundColor: colors.white,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  ngoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border || '#F3F4F6',
+  },
+  ngoIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  ngoHeaderText: {
+    flex: 1,
+  },
+  ngoTitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  ngoName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  ngoDetails: {
+    gap: 12,
+  },
+  ngoDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ngoDetailLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
+    width: 100,
+  },
+  ngoDetailValue: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    flex: 1,
   },
   section: {
     paddingHorizontal: 20,
