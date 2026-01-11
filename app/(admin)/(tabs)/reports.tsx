@@ -129,14 +129,6 @@ const AdminReports = () => {
         <View>
           <Text style={styles.headerTitle}>Manage Reports</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={styles.mapButton}
-            onPress={() => router.push('/(admin)/map-view')}
-          >
-            <Ionicons name="map" size={20} color={colors.white} />
-          </TouchableOpacity>
-        </View>
       </View>
 
 

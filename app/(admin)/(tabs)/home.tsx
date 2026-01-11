@@ -137,13 +137,6 @@ const AdminHome = () => {
             <Text style={styles.greeting}>Welcome back,</Text>
             <Text style={styles.adminName}>{userData?.name || 'Admin'} 👋</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.notificationButton}
-            onPress={() => router.push('../notifications')}
-          >
-            <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-            <View style={styles.notificationBadge} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.statsGrid}>
